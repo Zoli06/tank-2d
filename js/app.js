@@ -39,6 +39,7 @@ class Player {
     ctx.drawImage(this.#image, this.positionX, this.positionY);
     ctx.restore();
   }
+}
 
 class GameMap {
   wallWidth = 10;
