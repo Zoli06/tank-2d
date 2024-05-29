@@ -4,8 +4,8 @@ const ctx = canvas.getContext('2d');
 class Player {
   positionX = 100;
   positionY = 100;
-  width = 100;
-  height = 100;
+  width = 50;
+  height = 50;
   rotation = 0;
 
   #image = new Image();
@@ -33,23 +33,115 @@ class Player {
     console.log('Player render');
 
     ctx.save();
-    ctx.translate(this.positionY, this.positionY);
+    ctx.translate(this.positionX, this.positionY);
     ctx.rotate(this.rotation * Math.PI / 180);
     ctx.translate(-this.middleX, -this.middleY);
-    ctx.drawImage(this.#image, this.positionX, this.positionY);
+    ctx.drawImage(this.#image, this.positionX, this.positionY, this.width, this.height);
+
+    // draw 2px rectangle around player for debugging
+    ctx.strokeStyle = '#000000';
+    ctx.strokeRect(this.positionX, this.positionY, this.width, this.height);
+
+
     ctx.restore();
   }
 }
 
 class GameMap {
-  #wallWidth = 10;
-  #blockSize = 50;
+  #wallWidth = 20;
+  #blockSize = 100;
   #wallColor = '#ff0000';
   #tunnelColor = '#00ff00';
   #map;
 
   constructor(map) {
     this.#map = map
+  }
+
+  isCoordinateWall(x, y) {
+    // input coordinates are in pixels
+
+    // get block coordinates
+    const blockX = Math.floor(x / this.#blockSize);
+    const blockY = Math.floor(y / this.#blockSize);
+
+
+    // there are four walls: left, right, top, bottom
+    // if wall exists, check if pixel is inside wall
+    // left wall rectangle:
+    // ctx.fillRect(blockStartX, blockStartY + this.#blockSize / 2 - this.#wallWidth / 2, this.#blockSize / 2 + this.#wallWidth / 2, this.#wallWidth);
+    // check if pixel is inside this rectangle
+    const blockStartX = blockX * this.#blockSize;
+    const blockStartY = blockY * this.#blockSize;
+    const blockEndX = blockStartX + this.#blockSize;
+    const blockEndY = blockStartY + this.#blockSize;
+    if (this.#map[blockY][blockX][0]) {
+      if (x >= blockStartX && x <= blockStartX + this.#blockSize / 2 + this.#wallWidth / 2 && y >= blockStartY + this.#blockSize / 2 - this.#wallWidth / 2 && y <= blockStartY + this.#blockSize / 2 + this.#wallWidth / 2) {
+        return true;
+      }
+    }
+    // right wall rectangle:
+    // ctx.fillRect(blockStartX + this.#blockSize / 2 - this.#wallWidth / 2, blockStartY + this.#blockSize / 2 - this.#wallWidth / 2, this.#blockSize / 2 + this.#wallWidth / 2, this.#wallWidth);
+    // check if pixel is inside this rectangle
+    if (this.#map[blockY][blockX][1]) {
+      if (x >= blockStartX + this.#blockSize / 2 - this.#wallWidth / 2 && x <= blockEndX && y >= blockStartY + this.#blockSize / 2 - this.#wallWidth / 2 && y <= blockStartY + this.#blockSize / 2 + this.#wallWidth / 2) {
+        return true;
+      }
+    }
+    // top wall rectangle:
+    // ctx.fillRect(blockStartX + this.#blockSize / 2 - this.#wallWidth / 2, blockStartY, this.#wallWidth, this.#blockSize / 2 + this.#wallWidth / 2);
+    // check if pixel is inside this rectangle
+    if (this.#map[blockY][blockX][2]) {
+      if (x >= blockStartX + this.#blockSize / 2 - this.#wallWidth / 2 && x <= blockStartX + this.#blockSize / 2 + this.#wallWidth / 2 && y >= blockStartY && y <= blockStartY + this.#blockSize / 2 + this.#wallWidth / 2) {
+        return true;
+      }
+    }
+    // bottom wall rectangle:
+    // ctx.fillRect(blockStartX + this.#blockSize / 2 - this.#wallWidth / 2, blockStartY + this.#blockSize / 2 - this.#wallWidth / 2, this.#wallWidth, this.#blockSize / 2 + this.#wallWidth / 2);
+    // check if pixel is inside this rectangle
+    if (this.#map[blockY][blockX][3]) {
+      if (x >= blockStartX + this.#blockSize / 2 - this.#wallWidth / 2 && x <= blockStartX + this.#blockSize / 2 + this.#wallWidth / 2 && y >= blockStartY + this.#blockSize / 2 - this.#wallWidth / 2 && y <= blockEndY) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  isRectangleWall(x, y, width, height, rotation) {
+    const coordinates = [];
+    for (let i = x; i < x + width; i++) {
+      for (let j = y; j < y + height; j++) {
+        if (this.isCoordinateWall(i, j)) {
+          coordinates.push([i, j]);
+        }
+      }
+    }
+
+    // rotate
+    // rotate rectangle around middle point
+    // get middle point
+    const middleX = x + width / 2;
+    const middleY = y + height / 2;
+
+    // rotate each point around middle point
+    const rotatedCoordinates = [];
+    for (let i = 0; i < coordinates.length; i++) {
+      const x = coordinates[i][0];
+      const y = coordinates[i][1];
+      const newX = Math.cos(rotation) * (x - middleX) - Math.sin(rotation) * (y - middleY) + middleX;
+      const newY = Math.sin(rotation) * (x - middleX) + Math.cos(rotation) * (y - middleY) + middleY;
+      rotatedCoordinates.push([newX, newY]);
+    }
+
+    // check if rotated point is inside wall
+    for (let i = 0; i < rotatedCoordinates.length; i++) {
+      if (this.isCoordinateWall(rotatedCoordinates[i][0], rotatedCoordinates[i][1])) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   render() {
@@ -126,6 +218,17 @@ async function start() {
     gameMap.render();
     player.render();
 
+    // test collision detection
+    // x = 140;
+    // y = 140;
+    // console.log(gameMap.isCoordinateWall(x, y));
+    // // draw point
+    // ctx.fillStyle = '#000000';
+    // ctx.fillRect(x, y, 1, 1);
+
+    console.log(gameMap.isRectangleWall(player.positionX, player.positionY, player.width, player.height, player.rotation * Math.PI / 180));
+    
+
     // if d is pressed, rotate right
     if (pressedKeys['D'.charCodeAt(0)])
     {
@@ -138,17 +241,17 @@ async function start() {
     }
 
     // not working
-    // // if w is pressed, move forward
-    // if (pressedKeys['W'.charCodeAt(0)])
-    // {
-    //   // limit to 360 degrees
-    //   player.rotation = player.rotation % 360;
+    // if w is pressed, move forward
+    if (pressedKeys['W'.charCodeAt(0)])
+    {
+      // limit to 360 degrees
+      player.rotation = player.rotation % 360
       
 
-    //   radians = player.rotation * Math.PI / 180;
-    //   player.positionX += Math.cos(radians);
-    //   player.positionY += Math.sin(radians);
-    // }
+      radians = player.rotation * Math.PI / 180;
+      player.positionY += Math.sin(radians);
+      player.positionX += Math.cos(radians);
+    }
 
     await sleep(50);
   }
