@@ -2,11 +2,14 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 class Player {
-  positionX = 100;
-  positionY = 100;
+  positionX = 70;
+  positionY = 70;
   width = 50;
   height = 50;
   rotation = 0;
+  forwardspeed = 5;
+  backwardsSpeed= 3;
+  rotateSpeed = 5;
 
   #image = new Image();
 
@@ -33,15 +36,14 @@ class Player {
     console.log('Player render');
 
     ctx.save();
-    ctx.translate(this.positionX, this.positionY);
+    ctx.translate(this.positionX + this.width / 2, this.positionY + this.height / 2);
     ctx.rotate(this.rotation * Math.PI / 180);
-    ctx.translate(-this.middleX, -this.middleY);
+    ctx.translate(-this.positionX - this.width / 2, -this.positionY - this.height / 2);
     ctx.drawImage(this.#image, this.positionX, this.positionY, this.width, this.height);
 
     // draw 2px rectangle around player for debugging
     ctx.strokeStyle = '#000000';
     ctx.strokeRect(this.positionX, this.positionY, this.width, this.height);
-
 
     ctx.restore();
   }
@@ -65,12 +67,6 @@ class GameMap {
     const blockX = Math.floor(x / this.#blockSize);
     const blockY = Math.floor(y / this.#blockSize);
 
-
-    // there are four walls: left, right, top, bottom
-    // if wall exists, check if pixel is inside wall
-    // left wall rectangle:
-    // ctx.fillRect(blockStartX, blockStartY + this.#blockSize / 2 - this.#wallWidth / 2, this.#blockSize / 2 + this.#wallWidth / 2, this.#wallWidth);
-    // check if pixel is inside this rectangle
     const blockStartX = blockX * this.#blockSize;
     const blockStartY = blockY * this.#blockSize;
     const blockEndX = blockStartX + this.#blockSize;
@@ -80,25 +76,16 @@ class GameMap {
         return true;
       }
     }
-    // right wall rectangle:
-    // ctx.fillRect(blockStartX + this.#blockSize / 2 - this.#wallWidth / 2, blockStartY + this.#blockSize / 2 - this.#wallWidth / 2, this.#blockSize / 2 + this.#wallWidth / 2, this.#wallWidth);
-    // check if pixel is inside this rectangle
     if (this.#map[blockY][blockX][1]) {
       if (x >= blockStartX + this.#blockSize / 2 - this.#wallWidth / 2 && x <= blockEndX && y >= blockStartY + this.#blockSize / 2 - this.#wallWidth / 2 && y <= blockStartY + this.#blockSize / 2 + this.#wallWidth / 2) {
         return true;
       }
     }
-    // top wall rectangle:
-    // ctx.fillRect(blockStartX + this.#blockSize / 2 - this.#wallWidth / 2, blockStartY, this.#wallWidth, this.#blockSize / 2 + this.#wallWidth / 2);
-    // check if pixel is inside this rectangle
     if (this.#map[blockY][blockX][2]) {
       if (x >= blockStartX + this.#blockSize / 2 - this.#wallWidth / 2 && x <= blockStartX + this.#blockSize / 2 + this.#wallWidth / 2 && y >= blockStartY && y <= blockStartY + this.#blockSize / 2 + this.#wallWidth / 2) {
         return true;
       }
     }
-    // bottom wall rectangle:
-    // ctx.fillRect(blockStartX + this.#blockSize / 2 - this.#wallWidth / 2, blockStartY + this.#blockSize / 2 - this.#wallWidth / 2, this.#wallWidth, this.#blockSize / 2 + this.#wallWidth / 2);
-    // check if pixel is inside this rectangle
     if (this.#map[blockY][blockX][3]) {
       if (x >= blockStartX + this.#blockSize / 2 - this.#wallWidth / 2 && x <= blockStartX + this.#blockSize / 2 + this.#wallWidth / 2 && y >= blockStartY + this.#blockSize / 2 - this.#wallWidth / 2 && y <= blockEndY) {
         return true;
@@ -112,14 +99,10 @@ class GameMap {
     const coordinates = [];
     for (let i = x; i < x + width; i++) {
       for (let j = y; j < y + height; j++) {
-        if (this.isCoordinateWall(i, j)) {
           coordinates.push([i, j]);
-        }
       }
     }
 
-    // rotate
-    // rotate rectangle around middle point
     // get middle point
     const middleX = x + width / 2;
     const middleY = y + height / 2;
@@ -160,8 +143,6 @@ class GameMap {
       for (let x = 0; x < this.#map[y].length; x++) {
         const blockStartX = x * this.#blockSize;
         const blockStartY = y * this.#blockSize;
-        const blockEndX = blockStartX + this.#blockSize;
-        const blockEndY = blockStartY + this.#blockSize;
         ctx.fillStyle = this.#tunnelColor;
         ctx.fillRect(blockStartX, blockStartY, this.#blockSize, this.#blockSize);
         if (this.#map[y][x][0]) {
@@ -201,14 +182,14 @@ async function start() {
   const player = new Player();
   const gameMap = new GameMap([
     [[0, 1, 0, 1], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 0, 0, 1]],
-    [[0, 0, 1, 1], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1]],
-    [[0, 0, 1, 1], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1]],
-    [[0, 0, 1, 1], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 1], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1]],
-    [[0, 0, 1, 1], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 1, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1]],
-    [[0, 0, 1, 1], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1]],
-    [[0, 0, 1, 1], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1]],
-    [[0, 0, 1, 1], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1]],
-    [[0, 0, 1, 1], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1]],
+    [[0, 0, 1, 1], [0, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 1]],
+    [[0, 0, 1, 1], [0, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 0, 0, 0], [0, 1, 0, 0], [1, 1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 1]],
+    [[0, 0, 1, 1], [0, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 1], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 1]],
+    [[0, 0, 1, 1], [0, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 1, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 1]],
+    [[0, 0, 1, 1], [0, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 1]],
+    [[0, 0, 1, 1], [0, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 1]],
+    [[0, 0, 1, 1], [0, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 1]],
+    [[0, 0, 1, 1], [0, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 1]],
     [[0, 1, 1, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0], [1, 0, 1, 0]],
   ]);
   await player.initialize('img/tank_1.png');
@@ -218,39 +199,46 @@ async function start() {
     gameMap.render();
     player.render();
 
-    // test collision detection
-    // x = 140;
-    // y = 140;
-    // console.log(gameMap.isCoordinateWall(x, y));
-    // // draw point
-    // ctx.fillStyle = '#000000';
-    // ctx.fillRect(x, y, 1, 1);
-
-    console.log(gameMap.isRectangleWall(player.positionX, player.positionY, player.width, player.height, player.rotation * Math.PI / 180));
-    
-
-    // if d is pressed, rotate right
     if (pressedKeys['D'.charCodeAt(0)])
     {
-      player.rotation += 2;
+      const newRotation = player.rotation + player.rotateSpeed;
+
+      if (!gameMap.isRectangleWall(player.positionX, player.positionY, player.width, player.height, newRotation * Math.PI / 180)) {
+        player.rotation = newRotation;
+      }
     }
-    // if a is pressed, rotate left
     if (pressedKeys['A'.charCodeAt(0)])
     {
-      player.rotation -= 2;
-    }
+      const newRotation = player.rotation - player.rotateSpeed;
 
-    // not working
-    // if w is pressed, move forward
+      if (!gameMap.isRectangleWall(player.positionX, player.positionY, player.width, player.height, newRotation * Math.PI / 180)) {
+        player.rotation = newRotation;
+      }
+    }
     if (pressedKeys['W'.charCodeAt(0)])
     {
-      // limit to 360 degrees
-      player.rotation = player.rotation % 360
+      console.log('W pressed');
+      const r = 90 - player.rotation;
       
+      const newX = player.positionX + Math.cos(r * Math.PI / 180) * player.forwardspeed;
+      const newY = player.positionY - Math.sin(r * Math.PI / 180) * player.forwardspeed;
 
-      radians = player.rotation * Math.PI / 180;
-      player.positionY += Math.sin(radians);
-      player.positionX += Math.cos(radians);
+      if (!gameMap.isRectangleWall(newX, newY, player.width, player.height, player.rotation * Math.PI / 180)) {
+        player.positionX = newX;
+        player.positionY = newY;
+      }
+    }
+    if (pressedKeys['S'.charCodeAt(0)])
+    {
+      const r = 90-player.rotation;
+
+      const newX = player.positionX - Math.cos(r * Math.PI / 180) * player.backwardsSpeed;
+      const newY = player.positionY + Math.sin(r * Math.PI / 180) * player.backwardsSpeed;
+
+      if (!gameMap.isRectangleWall(newX, newY, player.width, player.height, player.rotation * Math.PI / 180)) {
+        player.positionX = newX;
+        player.positionY = newY;
+      }
     }
 
     await sleep(50);
