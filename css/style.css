@@ -1,0 +1,14 @@
+.score-display {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.player-img {
+  height: 75px;
+}
+
+.score {
+  font-size: 2rem;
+}
