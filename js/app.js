@@ -5,12 +5,12 @@ async function play() {
   class Player {
     positionX;
     positionY;
-    width = 50;
-    height = 50;
+    width = 40;
+    height = 40;
     rotation = 0;
-    forwardspeed = 5;
-    backwardsSpeed = 3;
-    rotateSpeed = 5;
+    forwardspeed = 3;
+    backwardsSpeed = 1.5;
+    rotateSpeed = 3;
     fireCooldown = 1000;
     #lastFireTime = 0;
 
@@ -37,7 +37,8 @@ async function play() {
       rightKey,
       fireKey,
       image,
-      bulletImage
+      bulletImage,
+      rotation
     ) {
       this.positionX = positionX;
       this.positionY = positionY;
@@ -48,6 +49,7 @@ async function play() {
       this.#controls['fire'] = fireKey;
       this.#image = image;
       this.#bulletImage = bulletImage;
+      this.rotation = rotation;
     }
 
     isCircleInPlayer(x, y, radius) {
@@ -411,7 +413,7 @@ async function play() {
     radius;
     rotation;
     speed = 7;
-    timeToLive = 5000;
+    timeToLive = 6000;
     createdTime;
 
     #image = new Image();
@@ -512,8 +514,8 @@ async function play() {
   const score1Text = document.getElementById('score1');
   const score2Text = document.getElementById('score2');
 
-  const tankImage1 = await initializeImage('img/tank_1.png');
-  const tankImage2 = await initializeImage('img/tank_2.png');
+  const tankImage1 = await initializeImage('img/tank_1_new.png');
+  const tankImage2 = await initializeImage('img/tank_2_new.png');
   const bulletImage = await initializeImage('img/bullet.png');
 
   const player1 = new Player(
@@ -525,18 +527,20 @@ async function play() {
     'D'.charCodeAt(0),
     'F'.charCodeAt(0),
     tankImage1,
-    bulletImage
+    bulletImage,
+    135
   );
   const player2 = new Player(
-    500,
-    510,
+    70,
+    70,
     'I'.charCodeAt(0),
     'J'.charCodeAt(0),
     'K'.charCodeAt(0),
     'L'.charCodeAt(0),
     'H'.charCodeAt(0),
     tankImage2,
-    bulletImage
+    bulletImage,
+    -45
   );
 
   const map = [
@@ -591,12 +595,24 @@ async function play() {
     [
       [0, 0, 1, 1],
       [0, 1, 0, 0],
+      [1, 0, 0, 0],
+      [0, 1, 0, 0],
+      [1, 0, 1, 0],
+      [0, 0, 0, 0],
+      [0, 1, 0, 0],
+      [1, 1, 0, 0],
+      [1, 0, 0, 0],
+      [0, 0, 1, 1],
+    ],
+    [
+      [0, 0, 1, 1],
+      [0, 1, 0, 0],
       [1, 1, 0, 0],
       [1, 1, 0, 0],
+      [1, 1, 0, 1],
       [1, 1, 1, 0],
       [1, 1, 0, 0],
       [1, 1, 0, 0],
-      [1, 1, 0, 0],
       [1, 0, 0, 0],
       [0, 0, 1, 1],
     ],
@@ -604,21 +620,9 @@ async function play() {
       [0, 0, 1, 1],
       [0, 1, 0, 0],
       [1, 1, 0, 0],
-      [1, 1, 0, 0],
-      [1, 1, 0, 0],
-      [1, 1, 0, 0],
-      [1, 1, 0, 0],
-      [1, 1, 0, 0],
       [1, 0, 0, 0],
-      [0, 0, 1, 1],
-    ],
-    [
-      [0, 0, 1, 1],
+      [0, 0, 0, 0],
       [0, 1, 0, 0],
-      [1, 1, 0, 0],
-      [1, 1, 0, 0],
-      [1, 1, 0, 0],
-      [1, 1, 0, 0],
       [1, 1, 0, 0],
       [1, 1, 0, 0],
       [1, 0, 0, 0],
@@ -628,11 +632,11 @@ async function play() {
       [0, 0, 1, 1],
       [0, 1, 0, 0],
       [1, 1, 0, 0],
+      [1, 0, 0, 0],
+      [0, 1, 0, 0],
       [1, 1, 0, 0],
-      [1, 1, 0, 0],
-      [1, 1, 0, 0],
-      [1, 1, 0, 0],
-      [1, 1, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
       [1, 0, 0, 0],
       [0, 0, 1, 1],
     ],
@@ -662,7 +666,7 @@ async function play() {
     ],
   ];
 
-  const gameMap = new GameMap(document.defaultView?.innerHeight / map[0].length * .95, map);
+  const gameMap = new GameMap(document.defaultView?.innerHeight / map[0].length, map);
 
   let isEnded = false;
   while (!isEnded) {
@@ -686,10 +690,10 @@ async function play() {
           bullets[i].radius
         )
       ) {
-        score1++;
-        score1Text.innerText = score1;
+        score2++;
+        score2Text.innerText = score2;
         bullets.splice(bullets.indexOf(this), 1);
-        alert('Player 1 wins');
+        alert('Player 2 wins');
         isEnded = true;
         break;
       }
@@ -701,10 +705,10 @@ async function play() {
           bullets[i].radius
         )
       ) {
-        score2++;
-        score2Text.innerText = score2;
+        score1++;
+        score1Text.innerText = score1;
         bullets.splice(bullets.indexOf(this), 1);
-        alert('Player 2 wins');
+        alert('Player 1 wins');
         isEnded = true;
         break;
       }
@@ -718,7 +722,7 @@ async function play() {
       bullets[i].render();
     }
 
-    await sleep(50);
+    await sleep(1000/60);
   }
 }
 
